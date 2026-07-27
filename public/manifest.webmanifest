@@ -1,0 +1,23 @@
+{
+  "name": "GCore",
+  "short_name": "GCore",
+  "description": "Golf Course Operations Resource Engine",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#161719",
+  "theme_color": "#161719",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

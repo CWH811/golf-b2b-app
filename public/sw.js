@@ -80,6 +80,9 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'CACHE_CART_STATE') {
     event.waitUntil(cacheCartState(event.data.payload));
   }
+  if (event.data?.type === 'CACHE_SCAN_QUEUE') {
+    event.waitUntil(cacheScanQueue(event.data.payload));
+  }
 });
 
 async function networkFirst(request) {
@@ -112,4 +115,15 @@ async function cacheCartState(payload) {
     status: 200,
   });
   await cache.put(CART_STATE_URL, response);
+}
+
+const SCAN_QUEUE_URL = '/offline/scan-queue';
+
+async function cacheScanQueue(payload) {
+  const cache = await caches.open(CACHE_NAME);
+  const response = new Response(JSON.stringify(payload || []), {
+    headers: { 'Content-Type': 'application/json' },
+    status: 200,
+  });
+  await cache.put(SCAN_QUEUE_URL, response);
 }

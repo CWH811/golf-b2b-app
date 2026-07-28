@@ -24,6 +24,14 @@ GCore is a mobile-first golf course operations platform built with Next.js, Reac
 - Order submission route: app/api/order/route.ts
 - Auth integration: lib/supabase.ts
 - Client state: lib/store.ts
+- Secure admin dashboard: app/admin/page.tsx, app/admin/AdminDashboardClient.tsx
+- Admin API routes: app/api/admin/orders/route.ts, app/api/admin/catalog/route.ts
+
+## Admin Feature Surface
+- Owner-only admin dashboard at /admin
+- Orders view with incoming orders and order_items
+- Catalog manager with CSV/JSON bulk import
+- Shared contracts in src/lib/types/admin.ts
 
 ## Styling Guidelines
 - Dark-concrete visual language
@@ -37,6 +45,7 @@ The platform should support operational workflows such as:
 - resource tracking
 - scheduling and assignment workflows
 - inventory awareness for field operations
+- admin catalog management and bulk product ingestion
 
 ## Agent Boundaries
 - Frontend agent: presentation, layout, interaction, and styling

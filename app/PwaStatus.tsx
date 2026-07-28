@@ -8,10 +8,10 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 export function PwaStatus() {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => typeof window !== 'undefined' ? window.navigator.onLine : true);
   const [canInstall, setCanInstall] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isStandalone] = useState(() => typeof window !== 'undefined' ? window.matchMedia('(display-mode: standalone)').matches : false);
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(window.navigator.onLine);
@@ -20,9 +20,6 @@ export function PwaStatus() {
       setInstallPrompt(event as BeforeInstallPromptEvent);
       setCanInstall(true);
     };
-
-    setIsOnline(window.navigator.onLine);
-    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
 
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);

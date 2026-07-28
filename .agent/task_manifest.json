@@ -1,0 +1,38 @@
+{
+  "feature": "Secure Admin Dashboard + CSV Bulk Catalog Importer",
+  "planner": {
+    "role": "Lead Systems Architect",
+    "responsibilities": [
+      "Define feature scope and task sequence",
+      "Map CSV fields to Supabase products columns",
+      "Create shared TypeScript interfaces for admin contracts",
+      "Update .agent/architecture.md with admin feature surface"
+    ]
+  },
+  "tasks": {
+    "backend": [
+      "Implement app/api/admin/orders/route.ts to fetch orders with order_items and enforce owner auth",
+      "Implement app/api/admin/catalog/route.ts to fetch catalog and accept CSV/JSON uploads for bulk upsert into products"
+    ],
+    "frontend": [
+      "Implement protected admin page at app/admin/page.tsx",
+      "Build dark-concrete dashboard UI with Orders and Catalog Manager tabs",
+      "Add drag-and-drop CSV import zone that posts to app/api/admin/catalog"
+    ]
+  },
+  "deliverables": {
+    "sharedTypes": [
+      "AdminOrderSummary",
+      "AdminOrderItem",
+      "AdminCatalogRecord",
+      "AdminCatalogPayloadItem"
+    ],
+    "successCriteria": [
+      "All admin routes compile successfully",
+      "Admin dashboard loads and communicates with secure api routes",
+      "CSV bulk import payload maps to products(sku, name, base_price)",
+      "npm run build passes"
+    ]
+  },
+  "status": "planned"
+}

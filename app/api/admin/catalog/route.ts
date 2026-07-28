@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getAdminUser, isOwnerUser } from '../auth';
 
 type CatalogRecord = {
   sku: string;
@@ -92,33 +91,15 @@ function normalizePayload(payload: unknown): CatalogRecord[] {
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
-
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-          } catch {
-            // Ignore write failures during prerender or server context issues.
-          }
-        },
-      },
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { supabase, user, error: authError } = await getAdminUser();
+    if (authError || !user || !isOwnerUser(user)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: products, error: productsError } = await supabase
       .from('products')
-      .select('sku, name, base_price')
+      .select('sku, name, base_price, quantity_on_hand, status')
+      .neq('status', 'archived')
       .order('name', { ascending: true });
 
     if (productsError) {
@@ -129,6 +110,8 @@ export async function GET() {
       sku: product.sku,
       name: product.name,
       base_price: product.base_price,
+      quantity_on_hand: product.quantity_on_hand ?? 0,
+      status: product.status ?? 'active',
     })) });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load catalog';
@@ -138,27 +121,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
-
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-          } catch {
-            // Ignore write failures during prerender or server context issues.
-          }
-        },
-      },
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { supabase, user, error: authError } = await getAdminUser();
+    if (authError || !user || !isOwnerUser(user)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

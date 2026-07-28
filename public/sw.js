@@ -1,6 +1,7 @@
-const CACHE_NAME = 'gcore-offline-v1';
-const APP_SHELL = ['/', '/login', '/manifest.webmanifest'];
+const CACHE_NAME = 'gcore-offline-v2';
+const APP_SHELL = ['/', '/login', '/admin', '/manifest.webmanifest'];
 const CART_STATE_URL = '/offline/cart-state';
+const ADMIN_API_PREFIX = '/api/admin/';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -21,6 +22,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
+  // Only handle GET requests for caching
   if (request.method !== 'GET') {
     return;
   }
@@ -30,16 +32,45 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Cart state: serve from cache or return empty
   if (url.pathname === CART_STATE_URL) {
-    event.respondWith(caches.match(CART_STATE_URL).then((cached) => cached || new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
+    event.respondWith(
+      caches.match(CART_STATE_URL).then(
+        (cached) => cached || new Response(JSON.stringify({ items: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    );
     return;
   }
 
+  // Admin API calls: network-first with no cache fallback for data freshness
+  if (url.pathname.startsWith(ADMIN_API_PREFIX)) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        return response;
+      }).catch(() => {
+        return caches.match(request).then(
+          (cached) => cached || new Response(JSON.stringify({ error: 'You are offline. Admin data requires a network connection.' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      })
+    );
+    return;
+  }
+
+  // Navigation requests: network-first with offline fallback
   if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith(networkFirst(request));
     return;
   }
 
+  // Static assets: stale-while-revalidate
   if (['style', 'script', 'image', 'font'].includes(request.destination)) {
     event.respondWith(staleWhileRevalidate(request));
   }

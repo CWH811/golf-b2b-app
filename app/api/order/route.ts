@@ -25,7 +25,7 @@ export async function POST(request: Request) {
           setAll(cookiesToSet) {
             try {
               cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-            } catch (error) {
+            } catch {
               // Safely ignore errors if the browser blocks setting cookies here
             }
           },

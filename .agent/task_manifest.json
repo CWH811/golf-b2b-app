@@ -12,12 +12,23 @@
   "tasks": {
     "backend": [
       "Implement app/api/admin/orders/route.ts to fetch orders with order_items and enforce owner auth",
-      "Implement app/api/admin/catalog/route.ts to fetch catalog and accept CSV/JSON uploads for bulk upsert into products"
+      "Implement app/api/admin/catalog/route.ts to fetch catalog and accept CSV/JSON uploads for bulk upsert into products",
+      "Implement app/api/admin/catalog/[sku]/route.ts for PATCH (update product) and DELETE (soft-archive)",
+      "Implement app/api/admin/orders/[id]/route.ts for PATCH (update order status)",
+      "Implement app/api/admin/auth.ts for owner-only auth helpers"
     ],
     "frontend": [
       "Implement protected admin page at app/admin/page.tsx",
       "Build dark-concrete dashboard UI with Orders and Catalog Manager tabs",
-      "Add drag-and-drop CSV import zone that posts to app/api/admin/catalog"
+      "Add drag-and-drop CSV import zone that posts to app/api/admin/catalog",
+      "Build AdminOrdersTable with inline status updates",
+      "Build AdminCatalogTable with inline editing and soft-archive confirmation",
+      "Build ProductScanner with live camera capture, offline queue, low-light detection, and manual review for <85% confidence"
+    ],
+    "pwa": [
+      "Add scan queue caching to service worker (CACHE_SCAN_QUEUE message handler)",
+      "Add cart state caching to service worker (CACHE_CART_STATE message handler)",
+      "Add admin API network-first caching strategy with offline fallback"
     ]
   },
   "deliverables": {
@@ -34,5 +45,5 @@
       "npm run build passes"
     ]
   },
-  "status": "planned"
+  "status": "completed"
 }

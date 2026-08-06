@@ -22,25 +22,36 @@ create index if not exists idx_golf_cart_fleet_next_service on public.golf_cart_
 
 alter table public.golf_cart_fleet enable row level security;
 
-create policy if not exists "Authenticated users can read golf cart fleet"
-  on public.golf_cart_fleet
-  for select
-  using (auth.uid() is not null);
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'golf_cart_fleet' and policyname = 'Authenticated users can read golf cart fleet') then
+    create policy "Authenticated users can read golf cart fleet"
+      on public.golf_cart_fleet
+      for select
+      using (auth.uid() is not null);
+  end if;
 
-create policy if not exists "Authenticated users can insert golf cart fleet"
-  on public.golf_cart_fleet
-  for insert
-  with check (auth.uid() is not null);
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'golf_cart_fleet' and policyname = 'Authenticated users can insert golf cart fleet') then
+    create policy "Authenticated users can insert golf cart fleet"
+      on public.golf_cart_fleet
+      for insert
+      with check (auth.uid() is not null);
+  end if;
 
-create policy if not exists "Authenticated users can update golf cart fleet"
-  on public.golf_cart_fleet
-  for update
-  using (auth.uid() is not null);
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'golf_cart_fleet' and policyname = 'Authenticated users can update golf cart fleet') then
+    create policy "Authenticated users can update golf cart fleet"
+      on public.golf_cart_fleet
+      for update
+      using (auth.uid() is not null);
+  end if;
 
-create policy if not exists "Authenticated users can delete golf cart fleet"
-  on public.golf_cart_fleet
-  for delete
-  using (auth.uid() is not null);
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'golf_cart_fleet' and policyname = 'Authenticated users can delete golf cart fleet') then
+    create policy "Authenticated users can delete golf cart fleet"
+      on public.golf_cart_fleet
+      for delete
+      using (auth.uid() is not null);
+  end if;
+end $$;
 
 create or replace function public.update_golf_cart_fleet_updated_at()
 returns trigger as $$
@@ -50,6 +61,7 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists update_golf_cart_fleet_updated_at on public.golf_cart_fleet;
 create trigger update_golf_cart_fleet_updated_at
 before update on public.golf_cart_fleet
 for each row

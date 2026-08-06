@@ -79,15 +79,55 @@ export default function ScannerPage() {
     }
   };
 
+  const getDimpleStyle = (index: number) => {
+    const positions = [
+      { top: "18%", left: "28%", size: "12px" },
+      { top: "24%", left: "64%", size: "10px" },
+      { top: "38%", left: "18%", size: "14px" },
+      { top: "32%", left: "72%", size: "10px" },
+      { top: "55%", left: "22%", size: "14px" },
+      { top: "57%", left: "55%", size: "12px" },
+      { top: "72%", left: "28%", size: "16px" },
+      { top: "66%", left: "76%", size: "10px" },
+      { top: "82%", left: "45%", size: "14px" },
+      { top: "42%", left: "42%", size: "12px" },
+      { top: "12%", left: "45%", size: "10px" },
+      { top: "86%", left: "15%", size: "14px" },
+      { top: "26%", left: "85%", size: "12px" },
+      { top: "50%", left: "50%", size: "16px" },
+    ];
+
+    const position = positions[index % positions.length];
+    return {
+      position: "absolute",
+      width: position.size,
+      height: position.size,
+      top: position.top,
+      left: position.left,
+      borderRadius: "9999px",
+      backgroundColor: "rgba(0,0,0,0.55)",
+      boxShadow: "0 0 8px rgba(0,0,0,0.35)",
+    } as const;
+  };
+
   return (
     <main
-      className="min-h-[100dvh] flex flex-col items-center p-4 relative font-sans overflow-hidden"
+      className="min-h-[100dvh] flex flex-col items-center justify-between p-4 relative font-sans overflow-hidden"
       style={emulatedConcreteStyle}
     >
+      {/* Top-right Cart Button */}
+      <button
+        onClick={() => {}}
+        aria-label="Cart"
+        className="fixed top-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/60 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-sm"
+      >
+        <ShoppingCart className="h-6 w-6 text-[#39FF14]" />
+      </button>
+
       {/* Branded Header Area */}
-      <div className="w-full max-w-sm flex flex-col items-center mb-6 relative z-10">
+      <div className="w-full max-w-lg flex flex-col items-center mb-6 relative z-10">
         <div
-          className="relative w-full max-w-[280px] aspect-video overflow-hidden mb-2"
+          className="relative w-full max-w-[680px] aspect-[16/9] overflow-hidden rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.6)]"
           style={{
             maskImage: "radial-gradient(ellipse at center, black 40%, transparent 70%)",
             WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 70%)",
@@ -97,206 +137,60 @@ export default function ScannerPage() {
             src="/logo.jpg"
             alt="GCore Logo"
             fill
-            sizes="280px"
+            sizes="720px"
             className="object-cover"
+            loading="eager"
           />
         </div>
-        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#007BFF] to-[#39FF14] tracking-widest uppercase drop-shadow-md">
-          GCORE
-        </h1>
-        <p className="text-gray-400 text-[10px] font-bold tracking-widest uppercase mt-2 text-center">
-          Golf Course Operations Resource Engine
-        </p>
       </div>
 
       {/* 3D Golf Ball Scanner Button */}
-      <div className="relative my-6 z-10">
-        <div
+      <div className="relative my-6 z-10 flex flex-col items-center">
+        <button
           onClick={() => fileInputRef.current?.click()}
-          className="relative cursor-pointer"
-          style={{ perspective: "1000px" }}
+          className="relative w-72 h-72 sm:w-80 sm:h-80 rounded-full border border-[#39FF14]/20 shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:scale-105 overflow-hidden"
+          style={{
+            background: "radial-gradient(circle at 35% 35%, #202020 0%, #0b0b0b 60%, #030303 100%)",
+            boxShadow: "0 0 0 1px rgba(57,255,20,0.12), inset 0 0 40px rgba(0,0,0,0.45)",
+          }}
+          aria-label="Take Photo"
         >
-          <div
-            className="w-56 h-56 rounded-full transition-transform duration-300 hover:scale-105"
-            style={{
-              background:
-                "radial-gradient(circle at 25% 25%, #2a2a2a 0%, #0a0a0a 45%, #000000 100%)",
-              boxShadow:
-                "inset 0 0 40px rgba(0,0,0,0.9), 0 0 50px rgba(57,255,20,0.08), 0 20px 60px rgba(0,0,0,0.6)",
-              transform: "rotateX(25deg) rotateY(-15deg)",
-            }}
-          >
-            {/* Golf ball dimples */}
-            <div className="w-full h-full rounded-full relative">
-              {/* Dimple layer 1 */}
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "14px",
-                  height: "14px",
-                  top: "15%",
-                  left: "25%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  top: "20%",
-                  left: "60%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "16px",
-                  height: "16px",
-                  top: "35%",
-                  left: "15%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  top: "30%",
-                  left: "70%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "14px",
-                  height: "14px",
-                  top: "50%",
-                  left: "20%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  top: "55%",
-                  left: "55%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "16px",
-                  height: "16px",
-                  top: "70%",
-                  left: "30%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  top: "65%",
-                  left: "75%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "14px",
-                  height: "14px",
-                  top: "80%",
-                  left: "45%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  top: "40%",
-                  left: "40%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  top: "10%",
-                  left: "45%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "14px",
-                  height: "14px",
-                  top: "85%",
-                  left: "15%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-black/60"
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  top: "25%",
-                  left: "85%",
-                  boxShadow: "0 0 3px rgba(0,0,0,0.6)",
-                }}
-              />
+          <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_20%,rgba(57,255,20,0.18),transparent_35%)]" />
+          <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_60%,rgba(255,255,255,0.06),transparent_45%)]" />
+          <div className="absolute inset-0 rounded-full border-2 border-white/5" />
 
-              {/* Highlight for 3D effect */}
-              <div className="absolute top-[15%] left-[20%] w-10 h-10 rounded-full bg-white/15 blur-sm" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-32 h-32 rounded-full bg-[#111111]/80 border border-white/5 flex items-center justify-center shadow-inner shadow-black/50">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="url(#cameraGradient)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-white">
+                <defs>
+                  <linearGradient id="cameraGradient" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#39FF14" />
+                    <stop offset="100%" stopColor="#0FB2FF" />
+                  </linearGradient>
+                </defs>
+                <path d="M4.5 7.5h3l1.5-2h6l1.5 2h3a1.5 1.5 0 011.5 1.5v9a1.5 1.5 0 01-1.5 1.5H4.5A1.5 1.5 0 013 16.5v-9A1.5 1.5 0 014.5 7.5z" />
+                <path d="M12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
+              </svg>
             </div>
-
-            {/* Scanning ring */}
-            <div
-              className={`absolute -inset-3 rounded-full border-2 animate-pulse ${
-                isScanning ? "border-[#39FF14] opacity-100" : "border-[#39FF14]/30"
-              }`}
-            />
           </div>
-        </div>
 
-        {/* Scanner label */}
-        <p className="text-center text-xs font-bold text-gray-500 uppercase tracking-widest mt-4">
-          {isScanning ? "Scanning..." : "Tap to Scan Product"}
-        </p>
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-center">
+            <span className="block text-[11px] uppercase tracking-[0.35em] text-[#39FF14]/90 drop-shadow-[0_0_20px_rgba(57,255,20,0.35)]">
+              {isScanning ? "Scanning..." : "TAKE PHOTO"}
+            </span>
+          </div>
+
+          <div className="absolute inset-0 rounded-full pointer-events-none">
+            {Array.from({ length: 14 }).map((_, index) => (
+              <span
+                key={index}
+                className="absolute block rounded-full bg-black/50"
+                style={getDimpleStyle(index)}
+              />
+            ))}
+          </div>
+        </button>
       </div>
-
-      {/* Scan Action Button */}
-      <Button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isScanning}
-        className="mb-6 h-12 w-full max-w-sm bg-[#39FF14] text-black font-extrabold uppercase tracking-widest hover:bg-[#32e012] shadow-[0_0_15px_rgba(57,255,20,0.2)] transition-all disabled:opacity-50"
-      >
-        {isScanning ? (
-          <>
-            <Loader2 className="w-6 h-6 animate-spin text-black mr-2" />
-            Scanning...
-          </>
-        ) : (
-          <>
-            <Upload className="w-6 h-6 mr-2" />
-            Scan Product
-          </>
-        )}
-      </Button>
 
       {/* Hidden file input */}
       <input

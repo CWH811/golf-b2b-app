@@ -5,6 +5,15 @@ import { AdminOrdersTable } from './AdminOrdersTable';
 import { AdminCatalogTable } from './AdminCatalogTable';
 import { ProductScanner } from './ProductScanner';
 import type { AdminOrderSummary, AdminCatalogRecord } from '@/src/lib/types/admin';
+import type { OrderStatus } from '@/src/lib/types/orders';
+
+const ORDER_FILTERS: { label: string; value: OrderStatus | 'all' }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Shipped', value: 'shipped' },
+  { label: 'Fulfilled', value: 'fulfilled' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
 
 export function AdminDashboardClient() {
   const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
@@ -14,14 +23,16 @@ export function AdminDashboardClient() {
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setMessage(null);
 
     try {
+      const statusQuery = statusFilter === 'all' ? '' : `?status=${statusFilter}`;
       const [ordersResponse, catalogResponse] = await Promise.all([
-        fetch('/api/admin/orders'),
+        fetch(`/api/admin/orders${statusQuery}`),
         fetch('/api/admin/catalog'),
       ]);
 
@@ -42,7 +53,7 @@ export function AdminDashboardClient() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     void loadData();
@@ -156,6 +167,27 @@ export function AdminDashboardClient() {
       {message ? (
         <div className="rounded-xl border border-[#39FF14]/30 bg-[#39FF14]/10 px-4 py-3 text-sm text-[#dfffe2]">
           {message}
+        </div>
+      ) : null}
+
+      {/* Status filter bar (Orders tab) */}
+      {activeTab === 'orders' ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Filter:</span>
+          {ORDER_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => setStatusFilter(filter.value)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                statusFilter === filter.value
+                  ? 'bg-[#007BFF] text-white shadow-[0_0_16px_rgba(0,123,255,0.18)]'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
       ) : null}
 

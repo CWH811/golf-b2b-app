@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAdminUser, isOwnerUser } from '../../auth';
+import type { CatalogStatus } from '@/src/lib/types/admin';
+
+const VALID_CATALOG_STATUSES: CatalogStatus[] = ['active', 'archived'];
 
 export async function PATCH(
   request: Request,
@@ -16,12 +19,22 @@ export async function PATCH(
       name?: string;
       base_price?: number;
       quantity_on_hand?: number;
+      status?: CatalogStatus;
     };
 
     const updates: Record<string, string | number> = {};
     if (body.name !== undefined) updates.name = String(body.name).trim();
     if (body.base_price !== undefined) updates.base_price = Number(body.base_price);
     if (body.quantity_on_hand !== undefined) updates.quantity_on_hand = Math.max(0, Math.floor(Number(body.quantity_on_hand)));
+    if (body.status !== undefined) {
+      if (!VALID_CATALOG_STATUSES.includes(body.status)) {
+        return NextResponse.json(
+          { error: `Invalid status. Must be one of: ${VALID_CATALOG_STATUSES.join(', ')}` },
+          { status: 400 }
+        );
+      }
+      updates.status = body.status;
+    }
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });

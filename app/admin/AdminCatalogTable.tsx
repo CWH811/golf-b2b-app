@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { AdminCatalogRecord } from '@/src/lib/types/admin';
+import type { AdminCatalogRecord, CatalogStatus } from '@/src/lib/types/admin';
 
 type CatalogTableProps = {
   catalog: AdminCatalogRecord[];
@@ -16,6 +16,7 @@ export function AdminCatalogTable({ catalog, loading, onRefresh, searchQuery }: 
   const [deletingSku, setDeletingSku] = useState<string | null>(null);
   const [confirmDeleteSku, setConfirmDeleteSku] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [togglingSku, setTogglingSku] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -84,6 +85,28 @@ export function AdminCatalogTable({ catalog, loading, onRefresh, searchQuery }: 
     }
   };
 
+  const handleStatusToggle = async (sku: string, currentStatus: CatalogStatus | undefined) => {
+    const nextStatus: CatalogStatus = currentStatus === 'archived' ? 'active' : 'archived';
+    setTogglingSku(sku);
+    try {
+      const res = await fetch(`/api/admin/catalog/${encodeURIComponent(sku)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to update status');
+      }
+      showToast(`Product "${sku}" ${nextStatus === 'archived' ? 'archived' : 'reactivated'}`);
+      await onRefresh();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Failed to update status');
+    } finally {
+      setTogglingSku(null);
+    }
+  };
+
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#1b1d20]/95 shadow-[0_12px_45px_rgba(0,0,0,0.35)]">
       {/* Toast notification */}
@@ -145,6 +168,7 @@ export function AdminCatalogTable({ catalog, loading, onRefresh, searchQuery }: 
                 <th className="px-5 py-3 font-medium">Name</th>
                 <th className="px-5 py-3 font-medium">Base Price</th>
                 <th className="px-5 py-3 font-medium">In Stock</th>
+                <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -211,6 +235,15 @@ export function AdminCatalogTable({ catalog, loading, onRefresh, searchQuery }: 
                         </span>
                       </td>
                       <td className="px-5 py-3">
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${
+                          item.status === 'archived'
+                            ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                            : 'bg-[#39FF14]/10 text-[#39FF14] border-[#39FF14]/20'
+                        }`}>
+                          {item.status ?? 'active'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
                         <div className="flex gap-2">
                           <button
                             type="button"
@@ -221,10 +254,19 @@ export function AdminCatalogTable({ catalog, loading, onRefresh, searchQuery }: 
                           </button>
                           <button
                             type="button"
-                            onClick={() => setConfirmDeleteSku(item.sku)}
-                            className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/30 transition"
+                            onClick={() => void handleStatusToggle(item.sku, item.status)}
+                            disabled={togglingSku === item.sku}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+                              item.status === 'archived'
+                                ? 'bg-[#39FF14]/20 text-[#39FF14] hover:bg-[#39FF14]/30'
+                                : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                            }`}
                           >
-                            Archive
+                            {togglingSku === item.sku
+                              ? '…'
+                              : item.status === 'archived'
+                                ? 'Reactivate'
+                                : 'Archive'}
                           </button>
                         </div>
                       </td>

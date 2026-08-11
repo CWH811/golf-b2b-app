@@ -13,12 +13,21 @@ export type AdminOrderSummary = {
   order_items: AdminOrderItem[];
 };
 
+export type CatalogStatus = 'active' | 'archived';
+
 export type AdminCatalogRecord = {
   sku: string;
   name: string;
   base_price: number;
   quantity_on_hand?: number;
-  status?: string;
+  status?: CatalogStatus;
+};
+
+export type AdminCatalogPatchPayload = {
+  name?: string;
+  base_price?: number;
+  quantity_on_hand?: number;
+  status?: CatalogStatus;
 };
 
 export type AdminCatalogPayloadItem = {

@@ -1,0 +1,15 @@
+{
+  "name": "GCore Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:0-18",
+  "forwardPorts": [3000],
+  "postCreateCommand": "npm ci --prefer-offline --no-audit || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next"
+      ]
+    }
+  }
+}

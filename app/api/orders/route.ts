@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import type { OrderHistoryRecord } from '@/src/lib/types/orders';
+import type { OrderHistoryRecord, OrderStatus } from '@/src/lib/types/orders';
+import { VALID_ORDER_STATUSES } from '@/src/lib/types/orders';
 
 type RawOrderItem = {
   id: string;
@@ -72,13 +73,13 @@ export async function GET() {
 
       return {
         id: order.id,
-        status: order.status,
+        status: (VALID_ORDER_STATUSES.includes(order.status as OrderStatus) ? (order.status as OrderStatus) : ('pending' as OrderStatus)),
         created_at: order.created_at,
         updated_at: order.updated_at ?? undefined,
         item_count,
         total,
         items,
-      };
+      } as OrderHistoryRecord;
     });
 
     return NextResponse.json({ orders: normalizedOrders });

@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import type { OrderHistoryRecord } from '@/src/lib/types/orders';
+import type { OrderHistoryRecord, OrderStatus } from '@/src/lib/types/orders';
 
 type RawOrderItem = {
   id: string;
   sku: string;
   quantity: number;
   price_at_purchase: number;
-  products?: { name: string | null } | null;
+  products?: { name: string | null }[] | null;
 };
 
 type RawOrder = {
   id: string;
-  status: string;
+  status: OrderStatus;
   created_at: string;
   updated_at: string | null;
   order_items?: RawOrderItem[] | null;
@@ -62,7 +62,7 @@ export async function GET() {
       const items = (order.order_items ?? []).map((item) => ({
         id: item.id,
         sku: item.sku,
-        name: item.products?.name ?? item.sku,
+        name: item.products?.[0]?.name ?? item.sku,
         quantity: item.quantity,
         price_at_purchase: item.price_at_purchase,
       }));

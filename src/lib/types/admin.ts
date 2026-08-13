@@ -1,3 +1,5 @@
+import type { OrderStatus } from './orders';
+
 export type AdminOrderItem = {
   sku: string;
   quantity: number;
@@ -7,7 +9,7 @@ export type AdminOrderItem = {
 export type AdminOrderSummary = {
   id: string;
   user_id: string;
-  status: string;
+  status: OrderStatus;
   created_at: string;
   updated_at?: string;
   order_items: AdminOrderItem[];

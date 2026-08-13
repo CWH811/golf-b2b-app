@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useCartStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingCart, Upload } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 
 type ScanResult = {
   match_found: boolean;

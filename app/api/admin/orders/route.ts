@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminUser, isOwnerUser } from '../auth';
-import { VALID_ORDER_STATUSES } from '@/src/lib/types/orders';
+import { VALID_ORDER_STATUSES, type OrderStatus } from '@/src/lib/types/orders';
 
 type OrderItemSummary = {
   sku: string;
@@ -11,7 +11,7 @@ type OrderItemSummary = {
 type OrderSummary = {
   id: string;
   user_id: string;
-  status: string;
+  status: OrderStatus;
   created_at: string;
   order_items: OrderItemSummary[];
 };

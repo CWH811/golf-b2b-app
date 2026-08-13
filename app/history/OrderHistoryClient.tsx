@@ -44,7 +44,11 @@ export function OrderHistoryClient() {
   }, []);
 
   useEffect(() => {
-    void loadOrders();
+    const timeoutId = window.setTimeout(() => {
+      void loadOrders();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadOrders]);
 
   const handleReorder = async (orderId: string) => {

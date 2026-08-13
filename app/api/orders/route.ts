@@ -9,7 +9,7 @@ type RawOrderItem = {
   sku: string;
   quantity: number;
   price_at_purchase: number;
-  products?: { name: string | null } | null;
+  products?: { name: string | null }[] | null;
 };
 
 type RawOrder = {

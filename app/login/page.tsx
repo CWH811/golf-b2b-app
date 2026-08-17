@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleAuth = async () => {
@@ -31,7 +32,11 @@ export default function LoginPage() {
         if (error) {
           alert(error.message);
         } else {
-          window.location.href = "/";
+          if (isAdminLogin) {
+            window.location.href = "/admin";
+          } else {
+            window.location.href = "/";
+          }
         }
       }
     } finally {
@@ -58,7 +63,7 @@ export default function LoginPage() {
             <div className="text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#39FF14]">GCore</p>
               <CardTitle className="text-2xl font-extrabold text-center uppercase tracking-widest text-white mt-1">
-                {isSigningUp ? "Create Account" : "Sign In"}
+                {isSigningUp ? "Create Account" : isAdminLogin ? "Admin Login" : "Sign In"}
               </CardTitle>
             </div>
           </div>
@@ -92,12 +97,22 @@ export default function LoginPage() {
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="inline-block w-4 h-4 rounded-full border-2 border-black border-t-transparent animate-spin" />
-                {isSigningUp ? "Creating…" : "Signing In…"}
+                {isSigningUp ? "Creating…" : isAdminLogin ? "Opening Admin…" : "Signing In…"}
               </span>
             ) : (
-              isSigningUp ? "Sign Up" : "Sign In"
+              isSigningUp ? "Sign Up" : isAdminLogin ? "Admin Login" : "Sign In"
             )}
           </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setIsAdminLogin((value) => !value)}
+            className="w-full border border-[#39FF14]/40 bg-[#111827]/80 text-[#39FF14] hover:bg-[#39FF14]/10"
+          >
+            {isAdminLogin ? "Use Standard Login" : "Admin Login"}
+          </Button>
+
           <p
             className="text-center text-sm cursor-pointer text-slate-400 hover:text-[#39FF14] transition"
             onClick={() => setIsSigningUp(!isSigningUp)}

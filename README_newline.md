@@ -1,27 +1,27 @@
-# GCore â€” Golf Course Operations Resource Engine
+# GCore — Golf Course Operations Resource Engine
 
-A mobile-first B2B platform for golf course operations. GCore enables field teams to scan products with AI-powered camera recognition, manage orders, and maintain the master catalog â€” all with offline-first resiliency for spotty course Wi-Fi.
+A mobile-first B2B platform for golf course operations. GCore enables field teams to scan products with AI-powered camera recognition, manage orders, and maintain the master catalog — all with offline-first resiliency for spotty course Wi-Fi.
 
 ## Core Features
 
-### ðŸ“· AI Product Scanner
+### 📷 AI Product Scanner
 - Camera-based product identification using **Gemini 2.5 Flash** vision model
-- 85% confidence threshold â€” matches below this trigger a manual review state
+- 85% confidence threshold — matches below this trigger a manual review state
 - Low-light detection and graceful timeout handling for poor network conditions
 - Offline scan queue with automatic retry when connectivity returns
 
-### ðŸ›’ Order Management
+### 🛒 Order Management
 - Scan-to-cart workflow with Zustand state management
 - Secure order submission via Supabase auth
-- Admin dashboard for order status tracking (pending â†’ fulfilled â†’ shipped â†’ cancelled)
+- Admin dashboard for order status tracking (pending → fulfilled → shipped → cancelled)
 
-### ðŸ—‚ï¸ Admin Command Center
+### 🗂️ Admin Command Center
 - Owner-only protected dashboard at `/admin`
-- **Orders tab** â€” view incoming orders with line items, update statuses inline
-- **Catalog Manager** â€” inline product editing (name, price, stock), soft-archive (no hard deletes), CSV/JSON bulk import
-- **AI Scanner** â€” live camera scanning with offline queue, manual review for low-confidence matches
+- **Orders tab** — view incoming orders with line items, update statuses inline
+- **Catalog Manager** — inline product editing (name, price, stock), soft-archive (no hard deletes), CSV/JSON bulk import
+- **AI Scanner** — live camera scanning with offline queue, manual review for low-confidence matches
 
-### ðŸ“± PWA / Offline-First
+### 📱 PWA / Offline-First
 - Installable via web manifest with standalone display mode
 - Custom service worker with:
   - App shell caching for `/`, `/login`, `/admin`
@@ -55,7 +55,7 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
    npm install
    ```
 
-2. **Configure environment variables** â€” create `.env.local`:
+2. **Configure environment variables** — create `.env.local`:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
@@ -66,9 +66,9 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
    ADMIN_EMAIL=your-admin-email@example.com
    ```
 
-3. **Run database migrations** â€” apply the SQL files in `supabase/migrations/` to your Supabase project:
-   - `20260725120000_create_golf_cart_fleet_inventory.sql` â€” golf cart fleet tracking
-   - `20260802000000_create_core_tables.sql` â€” products, orders, order_items
+3. **Run database migrations** — apply the SQL files in `supabase/migrations/` to your Supabase project:
+   - `20260725120000_create_golf_cart_fleet_inventory.sql` — golf cart fleet tracking
+   - `20260802000000_create_core_tables.sql` — products, orders, order_items
 
 4. **Start the dev server**
    ```bash
@@ -115,7 +115,7 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
 | `cart_number` | text (unique) | Fleet cart identifier |
 | `model` | text | Cart model |
 | `status` | text | `available`, `in_use`, `maintenance`, `out_of_service` |
-| `battery_level` | integer | 0â€“100 |
+| `battery_level` | integer | 0–100 |
 | `odometer_miles` | integer | >= 0 |
 | `location` | text | Current location |
 | `assigned_to` | text | Assigned staff member |
@@ -140,15 +140,15 @@ All tables use **Row Level Security** with `auth.uid() is not null` policies, an
 
 ```
 app/
-â”œâ”€â”€ admin/              # Admin dashboard (orders, catalog, scanner)
-â”œâ”€â”€ api/
-â”‚   â”œâ”€â”€ admin/          # Owner-protected admin API routes
-â”‚   â”œâ”€â”€ order/          # Order submission
-â”‚   â””â”€â”€ scan/           # Gemini AI vision pipeline
-â”œâ”€â”€ login/              # Auth page
-â”œâ”€â”€ layout.tsx          # Root layout with PWA shell
-â”œâ”€â”€ page.tsx            # Mobile scanner + cart
-â””â”€â”€ PwaStatus.tsx       # Online/offline + install prompt
+├── admin/              # Admin dashboard (orders, catalog, scanner)
+├── api/
+│   ├── admin/          # Owner-protected admin API routes
+│   ├── order/          # Order submission
+│   └── scan/           # Gemini AI vision pipeline
+├── login/              # Auth page
+├── layout.tsx          # Root layout with PWA shell
+├── page.tsx            # Mobile scanner + cart
+└── PwaStatus.tsx       # Online/offline + install prompt
 components/ui/          # shadcn/ui primitives
 lib/                    # Zustand store, Supabase client
 public/                 # Manifest, service worker, assets
@@ -172,5 +172,4 @@ Deploy to Vercel with the environment variables configured in your project setti
 
 ## License
 
-Private â€” GCore is a proprietary B2B platform. 
-\n
+Private — GCore is a proprietary B2B platform.

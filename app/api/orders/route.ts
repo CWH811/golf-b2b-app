@@ -9,7 +9,7 @@ type RawOrderItem = {
   sku: string;
   quantity: number;
   price_at_purchase: number;
-  products?: { name: string | null } | null;
+  products?: { name: string | null } | { name: string | null }[] | null;
 };
 
 type RawOrder = {
@@ -63,7 +63,9 @@ export async function GET() {
       const items = (order.order_items ?? []).map((item) => ({
         id: item.id,
         sku: item.sku,
-        name: item.products?.name ?? item.sku,
+        name: Array.isArray(item.products)
+          ? item.products[0]?.name ?? item.sku
+          : item.products?.name ?? item.sku,
         quantity: item.quantity,
         price_at_purchase: item.price_at_purchase,
       }));

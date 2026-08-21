@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function AdminLayout({
   children,
 }: {
@@ -13,22 +15,22 @@ export default function AdminLayout({
             <p className="text-lg font-semibold text-white mt-1">Admin</p>
           </div>
           <nav className="flex flex-col gap-1">
-            <a
+            <Link
               href="/"
               className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 transition"
             >
               ← Back to Scanner
-            </a>
+            </Link>
             <div className="border-t border-white/10 my-3" />
             <span className="px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
               Management
             </span>
-            <a
+            <Link
               href="/admin"
               className="rounded-lg px-3 py-2 text-sm text-white bg-[#39FF14]/10 border border-[#39FF14]/20"
             >
               Dashboard
-            </a>
+            </Link>
           </nav>
         </aside>
 

@@ -11,6 +11,8 @@ Break the goal into tasks by concern:
 ## 2. Delegate
 Pass the task to the appropriate specialist with the shared architecture reference in context.
 
+The Orchestrator may delegate and implement tasks autonomously. Continue through the handoff, implementation, validation, and deployment steps without asking for permission. Ask the user only for unavailable credentials, required external configuration, or another genuine blocker.
+
 ## 3. Review
 Validate the combined result with:
 - npm run lint

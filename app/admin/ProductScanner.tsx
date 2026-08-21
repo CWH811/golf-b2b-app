@@ -65,11 +65,9 @@ export function ProductScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [scanState, setScanState] = useState<ScanState>({ status: 'idle' });
-  const [isOnline, setIsOnline] = useState(true);
-  const [queuedCount, setQueuedCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
+  const [queuedCount, setQueuedCount] = useState(() => getQueue().length);
 
   // ── Online/offline tracking ──
   useEffect(() => {
@@ -77,16 +75,12 @@ export function ProductScanner() {
     const goOffline = () => setIsOnline(false);
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
-    setIsOnline(navigator.onLine);
+    const initialOnline = window.navigator.onLine;
+    setTimeout(() => setIsOnline(initialOnline), 0);
     return () => {
       window.removeEventListener('online', goOnline);
       window.removeEventListener('offline', goOffline);
     };
-  }, []);
-
-  // ── Load queued count on mount ──
-  useEffect(() => {
-    setQueuedCount(getQueue().length);
   }, []);
 
   // ── Start camera stream (rear-facing) ──

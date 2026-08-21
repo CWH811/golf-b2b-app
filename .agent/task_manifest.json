@@ -45,5 +45,10 @@
       "npm run build passes"
     ]
   },
+  "execution": {
+    "status": "completed",
+    "orchestratorDirective": "Resume all delegated Backend, Frontend, and PWA tasks in dependency order. Continue implementation, validation, and repair autonomously until every task and success criterion is complete. Do not pause for permission unless a genuine external blocker requires unavailable credentials or configuration.",
+    "completionRule": "Mark completed only after the full test suite, lint, production build, and PWA deployment checks pass."
+  },
   "status": "completed"
 }

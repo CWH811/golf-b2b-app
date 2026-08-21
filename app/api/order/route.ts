@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { syncContactToGoHighLevel } from '@/lib/gohighlevel';
 
 type OrderItemPayload = {
   sku: string;
@@ -64,6 +65,11 @@ export async function POST(request: Request) {
       .insert(orderItems);
 
     if (itemsError) throw itemsError;
+
+    if (user.email) {
+      // Non-blocking: CRM sync failures must never break order submission.
+      syncContactToGoHighLevel({ email: user.email, tags: ['GCore Order'], source: 'GCore Order' }).catch(() => {});
+    }
 
     return NextResponse.json({ success: true, orderId: order.id });
 

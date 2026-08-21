@@ -1,7 +1,7 @@
 {
   "name": "GCore",
   "short_name": "GCore",
-  "description": "Golf Course Operations Resource Engine",
+  "description": "GCore - Golf Course Operations Resource Engine",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

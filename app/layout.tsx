@@ -1,19 +1,28 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { PwaStatus } from "./PwaStatus";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 // Load the GCore brand font
 const montserrat = Montserrat({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GCore | B2B Portal",
-  description: "Golf Course Operations Resource Engine",
+  metadataBase: new URL(SITE_URL),
+  title: "GCore | Golf Operations Portal",
+  description: "GCore - Golf Course Operations Resource Engine",
   applicationName: "GCore",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [{ url: "/logo.jpg", type: "image/jpeg" }],
     apple: [{ url: "/logo.jpg", type: "image/jpeg" }],
+  },
+  openGraph: {
+    title: "GCore | Golf Operations Portal",
+    description: "GCore - Golf Course Operations Resource Engine",
+    url: SITE_URL,
+    siteName: "GCore",
+    images: [{ url: "/logo.jpg" }],
   },
   other: {
     "mobile-web-app-capable": "yes",

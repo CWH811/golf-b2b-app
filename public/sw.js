@@ -83,6 +83,15 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'CACHE_SCAN_QUEUE') {
     event.waitUntil(cacheScanQueue(event.data.payload));
   }
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+self.addEventListener('controllerchange', () => {
+  self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+    clients.forEach((client) => client.postMessage({ type: 'GCORE_SW_UPDATE' }));
+  });
 });
 
 async function networkFirst(request) {

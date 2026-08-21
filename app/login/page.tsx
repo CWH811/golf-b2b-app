@@ -24,6 +24,12 @@ export default function LoginPage() {
         if (error) {
           alert(error.message);
         } else {
+          // Best-effort CRM lead capture; signup must succeed regardless of CRM availability.
+          fetch("/api/crm/sync-contact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, tags: ["GCore Signup"], source: "GCore Signup" }),
+          }).catch(() => {});
           alert("Check your email for the confirmation link!");
         }
       } else {

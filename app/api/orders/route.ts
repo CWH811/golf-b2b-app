@@ -72,16 +72,19 @@ export async function GET() {
 
       const item_count = items.reduce((sum, item) => sum + item.quantity, 0);
       const total = items.reduce((sum, item) => sum + item.quantity * item.price_at_purchase, 0);
+      const status: OrderStatus = VALID_ORDER_STATUSES.includes(order.status as OrderStatus)
+        ? (order.status as OrderStatus)
+        : 'pending';
 
       return {
         id: order.id,
-      status: (VALID_ORDER_STATUSES.includes(order.status as OrderStatus) ? (order.status as OrderStatus) : ('pending' as OrderStatus)),
+        status,
         created_at: order.created_at,
         updated_at: order.updated_at ?? undefined,
         item_count,
         total,
         items,
-      } as OrderHistoryRecord;
+      } satisfies OrderHistoryRecord;
     });
 
     return NextResponse.json({ orders: normalizedOrders });

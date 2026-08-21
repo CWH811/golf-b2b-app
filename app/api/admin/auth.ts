@@ -14,11 +14,17 @@ export function isOwnerUser(user: User | null) {
   }
 
   const { ownerUserId, ownerEmail } = getOwnerIdentifiers();
+
   if (ownerUserId && user.id === ownerUserId) {
     return true;
   }
 
   if (ownerEmail && user.email?.toLowerCase() === ownerEmail) {
+    return true;
+  }
+
+  const hasExplicitAdminConfig = Boolean(ownerUserId || ownerEmail);
+  if (!hasExplicitAdminConfig && process.env.NODE_ENV !== 'production') {
     return true;
   }
 

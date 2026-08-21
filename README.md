@@ -166,6 +166,35 @@ npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
+## Multi-machine workflow (home laptop / work PC)
+
+Always work from a real local git clone — never open this repo via VS Code's "Open Remote Repository" / GitHub virtual filesystem view. That view can't run `npm`/tests, and edits made there create a second, independently-diverging copy of the repo, which is what causes merge conflicts when switching machines.
+
+On each machine:
+
+```bash
+git clone https://github.com/CWH811/golf-b2b-app.git
+cd golf-b2b-app
+npm install
+```
+
+Each time you sit down to work:
+
+```bash
+git pull            # sync latest before starting
+```
+
+Each time you finish a session:
+
+```bash
+npm test && npm run build   # verify before pushing
+git add -A
+git commit -m "..."
+git push origin master
+```
+
+As long as both machines always open the local folder directly (`File > Open Folder`) instead of a remote/virtual view, `git pull`/`git push` alone keeps progress fully in sync between them.
+
 ## Deployment
 
 Deploy to Vercel with the environment variables configured in your project settings. The PWA service worker and manifest are generated during the build.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { useCartStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,23 +125,21 @@ export default function ScannerPage() {
       </button>
 
       <div className="w-full max-w-[720px] flex flex-col items-center mt-2 mb-6 relative z-10">
-        <div className="relative w-full max-w-[680px] aspect-[16/9] overflow-hidden rounded-[28px] border border-white/10 bg-[#1a1c1e]/80 shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(57,255,20,0.15),transparent_32%)]" />
-          <div className="absolute inset-0 opacity-70 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(0,0,0,0.2))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_52%,rgba(0,0,0,0.7)_100%)]" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative flex items-center justify-center gap-1 text-[clamp(3.5rem,9vw,8rem)] font-black leading-none tracking-[-0.12em] uppercase text-transparent drop-shadow-[0_0_18px_rgba(81,252,255,0.45)]">
-              <span className="inline-flex items-center justify-center rounded-full border border-[#9ef7ff]/30 bg-[radial-gradient(circle_at_50%_35%,#b1f7ff_0%,#58d9ff_25%,#0c2137_60%,#091821_100%)] p-2 text-[0.2em] text-[#dffcff] shadow-[0_0_30px_rgba(57,255,20,0.18)]">
-                <span className="inline-block h-6 w-6 rounded-full border border-[#dffcff]/80 bg-[radial-gradient(circle_at_35%_30%,#f8fbff_0%,#dbe2e8_20%,#606a71_52%,#0d1013_100%)]" />
-              </span>
-              <span className="bg-[linear-gradient(180deg,#d6f8ff_0%,#a1e4ff_15%,#5ac8ff_38%,#1b3d4d_60%,#f4f6f7_100%)] bg-clip-text">
-                GCORE
-              </span>
-            </div>
-          </div>
-          <div className="absolute inset-x-0 bottom-5 text-center text-[0.7rem] font-medium uppercase tracking-[0.35em] text-[#dbe8f4] opacity-80">
-            GOLF COURSE OPERATIONS RESOURCE ENGINE
-          </div>
+        <div
+          className="relative w-full max-w-[680px] aspect-[16/9] overflow-hidden rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.6)]"
+          style={{
+            maskImage: "radial-gradient(ellipse at center, black 40%, transparent 70%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 70%)",
+          }}
+        >
+          <Image
+            src="/logo.jpg"
+            alt="GCore Logo"
+            fill
+            sizes="720px"
+            className="object-cover"
+            loading="eager"
+          />
         </div>
       </div>
 

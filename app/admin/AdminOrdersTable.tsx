@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import type { AdminOrderSummary } from '@/src/lib/types/admin';
+import { VALID_ORDER_STATUSES, type OrderStatus } from '@/src/lib/types/orders';
 
 type OrdersTableProps = {
   orders: AdminOrderSummary[];
@@ -9,8 +10,6 @@ type OrdersTableProps = {
   onRefresh: () => Promise<void>;
   searchQuery: string;
 };
-
-const VALID_STATUSES = ['pending', 'fulfilled', 'shipped', 'cancelled'];
 
 export function AdminOrdersTable({ orders, loading, onRefresh, searchQuery }: OrdersTableProps) {
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -21,7 +20,7 @@ export function AdminOrdersTable({ orders, loading, onRefresh, searchQuery }: Or
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingOrderId(orderId);
     try {
       const res = await fetch(`/api/admin/orders/${orderId}`, {
@@ -102,11 +101,17 @@ export function AdminOrdersTable({ orders, loading, onRefresh, searchQuery }: Or
                     <div className="flex items-center gap-2">
                       <select
                         value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                          const nextStatus = event.target.value as OrderStatus;
+                          if (!VALID_ORDER_STATUSES.includes(nextStatus)) {
+                            return;
+                          }
+                          void handleStatusChange(order.id, nextStatus);
+                        }}
                         disabled={updatingOrderId === order.id}
                         className={`rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide appearance-none cursor-pointer disabled:opacity-60 ${getStatusColor(order.status)}`}
                       >
-                        {VALID_STATUSES.map((s) => (
+                        {VALID_ORDER_STATUSES.map((s) => (
                           <option key={s} value={s} className="bg-[#17191c] text-slate-200">
                             {s}
                           </option>

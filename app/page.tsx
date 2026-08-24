@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,9 @@ type ScanResult = {
 };
 
 export default function ScannerPage() {
+  const router = useRouter();
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [showCart, setShowCart] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addItem = useCartStore((state) => state.addItem);
@@ -117,7 +118,7 @@ export default function ScannerPage() {
       style={emulatedConcreteStyle}
     >
       <button
-        onClick={() => setShowCart((prev) => !prev)}
+        onClick={() => router.push("/cart")}
         aria-label="Toggle cart"
         className="fixed top-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full border border-[#39FF14]/40 bg-black/70 shadow-[0_0_20px_rgba(57,255,20,0.18)] backdrop-blur-sm"
       >

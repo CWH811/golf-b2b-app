@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminUser, isOwnerUser } from '../auth';
-import { VALID_ORDER_STATUSES } from '@/src/lib/types/orders';
+import { VALID_ORDER_STATUSES, type OrderStatus } from '@/src/lib/types/orders';
 
 type OrderItemSummary = {
   sku: string;
@@ -11,7 +11,7 @@ type OrderItemSummary = {
 type OrderSummary = {
   id: string;
   user_id: string;
-  status: string;
+  status: OrderStatus;
   created_at: string;
   order_items: OrderItemSummary[];
 };
@@ -46,17 +46,23 @@ export async function GET(request: Request) {
       throw ordersError;
     }
 
-    const normalizedOrders = (orders ?? []).map((order) => ({
-      id: order.id,
-      user_id: order.user_id,
-      status: order.status,
-      created_at: order.created_at,
-      order_items: (order.order_items ?? []).map((item: OrderItemSummary) => ({
-        sku: item.sku,
-        quantity: item.quantity,
-        price_at_purchase: item.price_at_purchase,
-      })),
-    })) as OrderSummary[];
+    const normalizedOrders = (orders ?? []).map((order) => {
+      const status: OrderStatus = VALID_ORDER_STATUSES.includes(order.status as OrderStatus)
+        ? (order.status as OrderStatus)
+        : 'pending';
+
+      return {
+        id: order.id,
+        user_id: order.user_id,
+        status,
+        created_at: order.created_at,
+        order_items: (order.order_items ?? []).map((item: OrderItemSummary) => ({
+          sku: item.sku,
+          quantity: item.quantity,
+          price_at_purchase: item.price_at_purchase,
+        })),
+      };
+    }) satisfies OrderSummary[];
 
     return NextResponse.json({ orders: normalizedOrders });
   } catch (error: unknown) {

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import type { User } from '@supabase/supabase-js';
 import { isOwnerUser } from '@/app/api/admin/auth';
 
 // Next.js types declare `process.env.NODE_ENV` as readonly; cast to a mutable
@@ -17,7 +18,8 @@ describe('admin auth guard', () => {
 
   it('allows authenticated users in non-production environments when no explicit admin config is set', () => {
     mutableEnv.NODE_ENV = 'development';
-    const user = { id: 'user-123', email: 'demo@gcore.local' } as any;
+    const mockUser: Partial<User> = { id: 'user-123', email: 'demo@gcore.local' };
+    const user = mockUser as User;
 
     expect(isOwnerUser(user)).toBe(true);
   });

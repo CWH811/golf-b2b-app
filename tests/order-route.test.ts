@@ -65,7 +65,6 @@ describe('POST /api/order', () => {
     });
 
     const response = await POST(createOrderRequest([]));
-    const body = await response.json();
 
     expect(response.status).toBe(401);
   });

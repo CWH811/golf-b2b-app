@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useCartStore } from "@/lib/store";
+import { BottomNav } from "@/components/BottomNav";
 
 export default function CartPage() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function CartPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#161719] p-4 text-white">
+    <main className="min-h-screen bg-[#161719] p-4 pb-28 text-white">
       <div className="mx-auto max-w-md space-y-5 pb-8">
         <div className="flex items-center justify-between pt-2">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-[#39FF14]">
@@ -156,6 +157,8 @@ export default function CartPage() {
           </CardContent>
         </Card>
       </div>
+
+      <BottomNav />
     </main>
   );
 }

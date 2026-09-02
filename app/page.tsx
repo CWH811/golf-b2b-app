@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BottomNav } from "@/components/BottomNav";
 import { ShoppingCart } from "lucide-react";
 
 type ScanResult = {
@@ -114,7 +115,7 @@ export default function ScannerPage() {
 
   return (
     <main
-      className="min-h-[100dvh] flex flex-col items-center justify-between p-4 relative font-sans overflow-hidden"
+      className="min-h-[100dvh] flex flex-col items-center justify-between p-4 pb-28 relative font-sans overflow-hidden"
       style={emulatedConcreteStyle}
     >
       <button
@@ -123,6 +124,9 @@ export default function ScannerPage() {
         className="fixed top-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full border border-[#39FF14]/40 bg-black/70 shadow-[0_0_20px_rgba(57,255,20,0.18)] backdrop-blur-sm"
       >
         <ShoppingCart className="h-6 w-6 text-[#39FF14]" />
+        {cartItems.length > 0 && (
+          <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-[#39FF14] border border-black/40 shadow-[0_0_8px_rgba(57,255,20,0.9)]" />
+        )}
       </button>
 
       <div className="w-full max-w-[720px] flex flex-col items-center mt-2 mb-6 relative z-10">
@@ -247,7 +251,7 @@ export default function ScannerPage() {
 
       {/* Cart Summary (floating) */}
       {cartItems.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-20">
+        <div className="fixed bottom-24 right-4 z-20">
           <Card className="bg-[#000000]/80 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -268,6 +272,8 @@ export default function ScannerPage() {
           </Card>
         </div>
       )}
+
+      <BottomNav />
     </main>
   );
 }

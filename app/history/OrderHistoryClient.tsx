@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BottomNav } from '@/components/BottomNav';
 import type { OrderHistoryRecord, OrderStatus } from '@/src/lib/types/orders';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -77,7 +78,7 @@ export function OrderHistoryClient() {
 
   return (
     <main
-      className="min-h-[100dvh] p-4 sm:p-6 relative overflow-hidden"
+      className="min-h-[100dvh] p-4 pb-28 sm:p-6 sm:pb-28 relative overflow-hidden"
       style={emulatedConcreteStyle}
     >
       {/* Ambient glow */}
@@ -251,6 +252,8 @@ export function OrderHistoryClient() {
           </div>
         )}
       </div>
+
+      <BottomNav />
     </main>
   );
 }

@@ -10,6 +10,7 @@ const pushMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: pushMock }),
+  usePathname: () => '/',
 }));
 
 vi.mock('@/lib/supabase', () => ({

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BottomNav } from '@/components/BottomNav';
 
 export default function AdminLayout({
   children,
@@ -35,10 +36,13 @@ export default function AdminLayout({
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen">
+        <main className="flex-1 min-h-screen pb-24 md:pb-0">
           {children}
         </main>
       </div>
+
+      {/* Mobile bottom nav (desktop uses the sidebar above) */}
+      <BottomNav className="md:hidden" />
     </div>
   );
 }

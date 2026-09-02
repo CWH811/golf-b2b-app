@@ -65,6 +65,7 @@ export function ProductScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
   const [scanState, setScanState] = useState<ScanState>({ status: 'idle' });
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   const [queuedCount, setQueuedCount] = useState(() => getQueue().length);
@@ -75,12 +76,23 @@ export function ProductScanner() {
     const goOffline = () => setIsOnline(false);
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
-    const initialOnline = window.navigator.onLine;
-    setTimeout(() => setIsOnline(initialOnline), 0);
+    const timeoutId = window.setTimeout(() => {
+      setIsOnline(navigator.onLine);
+    }, 0);
     return () => {
       window.removeEventListener('online', goOnline);
       window.removeEventListener('offline', goOffline);
+      window.clearTimeout(timeoutId);
     };
+  }, []);
+
+  // ── Load queued count on mount ──
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setQueuedCount(getQueue().length);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   // ── Start camera stream (rear-facing) ──

@@ -56,8 +56,11 @@ export function AdminDashboardClient() {
   }, [statusFilter]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void loadData(), 0);
-    return () => window.clearTimeout(timer);
+    const timeoutId = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadData]);
 
   const handleCatalogUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

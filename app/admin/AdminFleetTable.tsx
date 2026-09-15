@@ -22,10 +22,40 @@ export function AdminFleetTable({ fleet, loading, onRefresh, searchQuery }: Flee
     assigned_to: '',
   });
   const [toast, setToast] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState({ cart_number: '', model: '', location: '' });
+  const [creating, setCreating] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleCreateCart = async () => {
+    if (!addForm.cart_number.trim() || !addForm.model.trim()) {
+      showToast('Cart number and model are required');
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await fetch('/api/admin/fleet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addForm),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create cart');
+      }
+      showToast(`Cart "${addForm.cart_number}" added to the fleet`);
+      setAddForm({ cart_number: '', model: '', location: '' });
+      setShowAddForm(false);
+      await onRefresh();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Failed to create cart');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const filtered = fleet.filter((cart) =>
@@ -115,8 +145,61 @@ export function AdminFleetTable({ fleet, loading, onRefresh, searchQuery }: Flee
       )}
 
       <div className="border-b border-white/10 px-5 py-4">
-        <h2 className="text-lg font-semibold text-white">Golf Cart Fleet</h2>
-        <p className="mt-1 text-sm text-slate-400">Track cart status, battery level, and service schedule across the fleet.</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Golf Cart Fleet</h2>
+            <p className="mt-1 text-sm text-slate-400">Track cart status, battery level, and service schedule across the fleet.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddForm((prev) => !prev)}
+            className="rounded-full bg-[#39FF14] px-4 py-2 text-sm font-semibold text-[#101210] transition hover:bg-[#2edb0d]"
+          >
+            {showAddForm ? 'Cancel' : '+ Add Cart'}
+          </button>
+        </div>
+        {showAddForm ? (
+          <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-[#161719] p-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Cart #</label>
+              <input
+                type="text"
+                value={addForm.cart_number}
+                onChange={(e) => setAddForm({ ...addForm, cart_number: e.target.value })}
+                placeholder="CART-01"
+                className="w-32 rounded-lg border border-white/10 bg-[#1b1d20] px-3 py-2 text-sm text-white placeholder:text-slate-500"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Model</label>
+              <input
+                type="text"
+                value={addForm.model}
+                onChange={(e) => setAddForm({ ...addForm, model: e.target.value })}
+                placeholder="E-Z-GO RXV"
+                className="w-40 rounded-lg border border-white/10 bg-[#1b1d20] px-3 py-2 text-sm text-white placeholder:text-slate-500"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location (optional)</label>
+              <input
+                type="text"
+                value={addForm.location}
+                onChange={(e) => setAddForm({ ...addForm, location: e.target.value })}
+                placeholder="fleet-yard"
+                className="w-36 rounded-lg border border-white/10 bg-[#1b1d20] px-3 py-2 text-sm text-white placeholder:text-slate-500"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleCreateCart()}
+              disabled={creating}
+              className="rounded-lg bg-[#007BFF] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0069d9] disabled:opacity-60"
+            >
+              {creating ? 'Adding…' : 'Add Cart'}
+            </button>
+          </div>
+        ) : null}
       </div>
       <div className="overflow-x-auto">
         {loading ? (

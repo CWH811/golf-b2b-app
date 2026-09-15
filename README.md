@@ -66,9 +66,11 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
    ADMIN_EMAIL=your-admin-email@example.com
    ```
 
-3. **Run database migrations** â€” apply the SQL files in `supabase/migrations/` to your Supabase project:
+3. **Run database migrations** â€” apply the SQL files in `supabase/migrations/` to your Supabase project, in order:
    - `20260725120000_create_golf_cart_fleet_inventory.sql` â€” golf cart fleet tracking
    - `20260802000000_create_core_tables.sql` â€” products, orders, order_items
+   - `20260803230000_fix_core_table_schema.sql` â€” schema fixes
+   - `20260914203000_secure_rls_policies.sql` â€” owner/admin-scoped RLS lockdown (see `TODO-admin-env.md` for the required post-migration `admin_users` insert)
 
 4. **Start the dev server**
    ```bash
@@ -121,7 +123,7 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
 | `assigned_to` | text | Assigned staff member |
 | `last_service_at` / `next_service_at` | timestamptz | Service scheduling |
 
-All tables use **Row Level Security** with `auth.uid() is not null` policies, and `updated_at` triggers automatically stamp modifications.
+All tables use **Row Level Security**, and `updated_at` triggers automatically stamp modifications. Reads on `products`/`golf_cart_fleet` are open to any authenticated user; `orders`/`order_items` are scoped to the owning user (`auth.uid() = user_id`); all writes to catalog, order status, and fleet records require membership in the `public.admin_users` table (see `TODO-admin-env.md`).
 
 ## API Routes
 

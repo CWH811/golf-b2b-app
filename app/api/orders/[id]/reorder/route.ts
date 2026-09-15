@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { logger } from '@/lib/logger';
 
 type RawSourceOrder = {
   id: string;
@@ -11,8 +12,9 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
-    const { id } = await params;
+    ({ id } = await params);
 
     const cookieStore = await cookies();
 
@@ -67,7 +69,7 @@ export async function POST(
     // Create the new order
     const { data: newOrder, error: orderError } = await supabase
       .from('orders')
-      .insert([{ user_id: user.id, status: 'pending' }])
+      .insert([{ user_id: user.id, user_email: user.email ?? null, status: 'pending' }])
       .select('id')
       .single();
 
@@ -91,9 +93,24 @@ export async function POST(
       throw itemsError;
     }
 
+    // Decrement stock for the reordered items too, same as a fresh
+    // order submission — best-effort, never blocks the response.
+    await Promise.all(
+      sourceItems.map((item) =>
+        supabase
+          .rpc('decrement_product_stock', { p_sku: item.sku, p_qty: item.quantity })
+          .then(({ error }) => {
+            if (error) {
+              logger.error('Stock decrement failed during reorder', { sku: item.sku, error: error.message });
+            }
+          })
+      )
+    );
+
     return NextResponse.json({ success: true, orderId: newOrder.id });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to reorder';
+    logger.error('Reorder failed', { orderId: id, error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

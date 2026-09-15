@@ -5,10 +5,20 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 process.env.GEMINI_API_KEY = 'test-gemini-key';
 
+// Mock next/headers cookies
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => ({
+    getAll: () => [],
+    set: () => {},
+    get: () => undefined,
+  })),
+}));
+
 // Mock Supabase before importing the route
 const mockFrom = vi.fn();
 const mockSelect = vi.fn();
 const mockNeq = vi.fn();
+const mockGetUser = vi.fn();
 
 // The route calls: from('products').select('*').neq('status', 'archived')
 mockFrom.mockReturnValue({ select: mockSelect });
@@ -21,8 +31,11 @@ mockNeq.mockResolvedValue({
   error: null,
 });
 
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
+vi.mock('@supabase/ssr', () => ({
+  createServerClient: vi.fn(() => ({
+    auth: {
+      getUser: mockGetUser,
+    },
     from: mockFrom,
   })),
 }));
@@ -67,10 +80,55 @@ describe('POST /api/scan', () => {
       ],
       error: null,
     });
+    // Authenticated by default so existing scan-behavior tests are unaffected;
+    // auth/rate-limit-specific tests below override this per-case.
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'user-123' } },
+      error: null,
+    });
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('returns 401 when the user is not authenticated', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: { message: 'Auth error' } });
+
+    const response = await POST(createMockRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.error).toBe('Unauthorized. Please log in.');
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  it('returns 429 after exceeding the per-user rate limit', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: JSON.stringify({
+        match_found: false,
+        matched_sku: null,
+        confidence: 0,
+        reasoning: 'No match.',
+        low_light: false,
+      }),
+    });
+
+    // Use a dedicated user id so this test's bucket doesn't collide
+    // with other tests sharing the module-level rate limit map.
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'rate-limit-test-user' } },
+      error: null,
+    });
+
+    let lastResponse;
+    for (let i = 0; i < 21; i += 1) {
+      lastResponse = await POST(createMockRequest());
+    }
+
+    expect(lastResponse!.status).toBe(429);
+    const body = await lastResponse!.json();
+    expect(body.error).toContain('Too many scan requests');
   });
 
   it('returns 400 when no image is provided', async () => {

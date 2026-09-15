@@ -17,9 +17,11 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
 
 ### ðŸ—‚ï¸ Admin Command Center
 - Owner-only protected dashboard at `/admin`
-- **Orders tab** â€” view incoming orders with line items, update statuses inline
+- **Orders tab** â€” view incoming orders with line items and customer email, update statuses inline (also pushes a status tag to GoHighLevel)
 - **Catalog Manager** â€” inline product editing (name, price, stock), soft-archive (no hard deletes), CSV/JSON bulk import
-- **AI Scanner** â€” live camera scanning with offline queue, manual review for low-confidence matches
+- **Fleet tab** â€” manage golf cart status, battery level, odometer, location, and assignment
+- **Activity tab** â€” read-only audit trail of catalog/order/fleet changes made through the admin dashboard
+- **AI Scanner** â€” live camera scanning with offline queue (auto-retries the moment connectivity returns), manual review for low-confidence matches
 
 ### ðŸ“± PWA / Offline-First
 - Installable via web manifest with standalone display mode
@@ -71,6 +73,9 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
    - `20260802000000_create_core_tables.sql` â€” products, orders, order_items
    - `20260803230000_fix_core_table_schema.sql` â€” schema fixes
    - `20260914203000_secure_rls_policies.sql` â€” owner/admin-scoped RLS lockdown (see `TODO-admin-env.md` for the required post-migration `admin_users` insert)
+   - `20260914204000_decrement_stock_rpc.sql` â€” SECURITY DEFINER RPC so order submission can decrement stock under the locked-down RLS
+   - `20260914205000_admin_audit_log.sql` â€” admin activity audit log table
+   - `20260914205500_add_order_user_email.sql` â€” denormalized `orders.user_email` for admin display and CRM sync
 
 4. **Start the dev server**
    ```bash
@@ -97,6 +102,7 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
 |--------|------|-------|
 | `id` | uuid (PK) | Auto-generated |
 | `user_id` | uuid | FK to auth.users |
+| `user_email` | text | Denormalized copy of the purchaser's email, captured at order time for admin display and CRM sync |
 | `status` | text | `pending`, `fulfilled`, `shipped`, `cancelled` |
 | `modified_by` | uuid | Tracks last editor |
 | `created_at` / `updated_at` | timestamptz | Auto-managed |
@@ -125,18 +131,37 @@ A mobile-first B2B platform for golf course operations. GCore enables field team
 
 All tables use **Row Level Security**, and `updated_at` triggers automatically stamp modifications. Reads on `products`/`golf_cart_fleet` are open to any authenticated user; `orders`/`order_items` are scoped to the owning user (`auth.uid() = user_id`); all writes to catalog, order status, and fleet records require membership in the `public.admin_users` table (see `TODO-admin-env.md`).
 
+### `admin_audit_log`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid (PK) | Auto-generated |
+| `admin_user_id` / `admin_email` | uuid / text | Who made the change |
+| `action` | text | e.g. `update_product`, `archive_product`, `bulk_import_catalog`, `update_order_status`, `update_golf_cart` |
+| `entity_type` | text | `product`, `order`, or `golf_cart` |
+| `entity_id` | text | SKU, order id, or cart id |
+| `details` | jsonb | The fields that changed |
+| `created_at` | timestamptz | Auto-managed |
+
+Only admins can read or write `admin_audit_log`; every admin catalog/order/fleet mutation writes an entry here (best-effort — a logging failure never blocks the underlying action), surfaced read-only in the dashboard's **Activity** tab.
+
 ## API Routes
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/api/scan` | POST | AI product identification from image |
-| `/api/order` | POST | Submit order (auth required) |
+| `/api/scan` | POST | AI product identification from image (auth required, rate-limited per user) |
+| `/api/order` | POST | Submit order (auth required); decrements product stock via RPC |
+| `/api/orders` | GET | Fetch the current user's own order history |
+| `/api/orders/[id]/reorder` | POST | Re-add a past order's items to the cart |
 | `/api/admin/catalog` | GET | Fetch active catalog (owner only) |
 | `/api/admin/catalog` | POST | Bulk import CSV/JSON (owner only) |
 | `/api/admin/catalog/[sku]` | PATCH | Update product (owner only) |
 | `/api/admin/catalog/[sku]` | DELETE | Soft-archive product (owner only) |
 | `/api/admin/orders` | GET | Fetch all orders (owner only) |
-| `/api/admin/orders/[id]` | PATCH | Update order status (owner only) |
+| `/api/admin/orders/[id]` | PATCH | Update order status (owner only); syncs status to GoHighLevel |
+| `/api/admin/fleet` | GET | Fetch golf cart fleet (owner only) |
+| `/api/admin/fleet/[id]` | PATCH | Update a cart's status/battery/location/etc. (owner only) |
+| `/api/admin/activity` | GET | Fetch recent admin audit log entries (owner only) |
+| `/api/crm/sync-contact` | POST | Reusable GoHighLevel contact upsert for lead-capture forms |
 
 ## Project Structure
 
@@ -166,7 +191,10 @@ npm run dev      # Start dev server
 npm run build    # Production build
 npm run start    # Start production server
 npm run lint     # Run ESLint
+npm test         # Run Vitest suite
 ```
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs lint, test, and build on every push/PR to `master` so regressions are caught automatically instead of relying on manual discipline.
 
 ## Multi-machine workflow (home laptop / work PC)
 
@@ -200,6 +228,12 @@ As long as both machines always open the local folder directly (`File > Open Fol
 ## Deployment
 
 Deploy to Vercel with the environment variables configured in your project settings. The PWA service worker and manifest are generated during the build.
+
+## Known limitations & roadmap
+
+- **Single-tenant data model.** `products`, `orders`, and `golf_cart_fleet` are shared across every signed-up user — there's no `org_id`/customer scoping. This is fine for one golf course (the current deployment at gcoregolf.com) but was **intentionally not reworked into multi-tenancy** here: doing so touches signup, RLS, billing, and the admin ownership model, and retrofitting it against a live single-customer production database without a clear tenant-onboarding/billing design would risk breaking the existing deployment. If GCore is sold to multiple golf courses, plan this as its own project: add an `organizations` table, an `org_id` column (with a backfill migration) on `products`/`orders`/`golf_cart_fleet`/`admin_users`, scope every RLS policy and admin query by org, and decide how staff get invited to an org at signup.
+- **Rate limiting on `/api/scan` is in-memory and per-instance**, not distributed. It meaningfully bounds abuse from a single warm serverless instance but isn't a hard global cap. For a hard cap, back it with Upstash Redis or Vercel KV.
+- **No APM/error-tracking service is wired up yet.** `lib/logger.ts` emits structured JSON logs so production errors are at least searchable in Vercel's log viewer; see the comment at the top of that file for how to add Sentry once a DSN is available.
 
 ## License
 

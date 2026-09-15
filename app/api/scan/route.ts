@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { GoogleGenAI } from '@google/genai';
+import { logger } from '@/lib/logger';
 
 type ProductRecord = {
   sku: string;
@@ -21,8 +23,66 @@ type AIResult = {
 
 const SCAN_TIMEOUT_MS = 15000; // 15-second timeout for poor network conditions
 
+// ── Best-effort per-user rate limit ──
+// This is an in-memory map, so it only bounds abuse within a single
+// serverless instance/process — it is NOT a distributed rate limiter.
+// It still meaningfully reduces the blast radius of a single
+// compromised/malicious account hammering the (paid) Gemini API from
+// one warm instance. For real distributed limiting, back this with
+// Upstash/Vercel KV keyed the same way.
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const RATE_LIMIT_MAX_REQUESTS = 20;
+const rateLimitBuckets = new Map<string, { count: number; windowStart: number }>();
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(key);
+
+  if (!bucket || now - bucket.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitBuckets.set(key, { count: 1, windowStart: now });
+    return false;
+  }
+
+  bucket.count += 1;
+  return bucket.count > RATE_LIMIT_MAX_REQUESTS;
+}
+
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+            } catch {
+              // Safely ignore errors if the browser blocks setting cookies here
+            }
+          },
+        },
+      }
+    );
+
+    // Belt-and-suspenders: the app's proxy (middleware) already
+    // redirects unauthenticated requests to /login, but check here
+    // too so this route is self-evidently safe and so we have a
+    // stable per-user key for rate limiting below.
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized. Please log in.' }, { status: 401 });
+    }
+
+    if (isRateLimited(user.id)) {
+      return NextResponse.json(
+        { error: 'Too many scan requests. Please wait a few minutes and try again.' },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('image') as File;
     if (!file) {
@@ -50,11 +110,6 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const base64Image = buffer.toString('base64');
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
 
     const { data: products, error: dbError } = await supabase
       .from('products')
@@ -154,7 +209,10 @@ Return ONLY a JSON object with these exact keys:
     return NextResponse.json(aiResult);
   } catch (error: unknown) {
     const isTimeout = error instanceof Error && error.message.includes('timed out');
-    console.error('Vision Pipeline Error:', isTimeout ? 'TIMEOUT' : error);
+    logger.error('Vision pipeline error', {
+      isTimeout,
+      error: error instanceof Error ? error.message : String(error),
+    });
 
     if (isTimeout) {
       return NextResponse.json({

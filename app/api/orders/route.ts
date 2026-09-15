@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { OrderHistoryRecord, OrderStatus } from '@/src/lib/types/orders';
 import { VALID_ORDER_STATUSES } from '@/src/lib/types/orders';
+import { logger } from '@/lib/logger';
 
 type RawOrderItem = {
   id: string;
@@ -90,6 +91,7 @@ export async function GET() {
     return NextResponse.json({ orders: normalizedOrders });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load order history';
+    logger.error('Failed to load order history', { error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

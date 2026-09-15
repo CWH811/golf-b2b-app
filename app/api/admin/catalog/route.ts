@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminUser, isOwnerUser } from '../auth';
+import { logAdminAction } from '../auditLog';
+import { logger } from '@/lib/logger';
 
 type CatalogRecord = {
   sku: string;
@@ -115,6 +117,7 @@ export async function GET() {
     })) });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load catalog';
+    logger.error('Failed to load admin catalog', { error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -155,9 +158,15 @@ export async function POST(request: Request) {
       throw error;
     }
 
+    await logAdminAction(supabase, user, 'bulk_import_catalog', 'product', 'bulk', {
+      imported: catalog.length,
+      skus: catalog.map((item) => item.sku),
+    });
+
     return NextResponse.json({ success: true, imported: catalog.length, rows: data ?? [] });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to import catalog';
+    logger.error('Catalog import failed', { error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

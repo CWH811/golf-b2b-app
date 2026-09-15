@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminUser, isOwnerUser } from '../auth';
 import { VALID_ORDER_STATUSES, type OrderStatus } from '@/src/lib/types/orders';
+import { logger } from '@/lib/logger';
 
 type OrderItemSummary = {
   sku: string;
@@ -11,6 +12,7 @@ type OrderItemSummary = {
 type OrderSummary = {
   id: string;
   user_id: string;
+  user_email: string | null;
   status: OrderStatus;
   created_at: string;
   order_items: OrderItemSummary[];
@@ -28,7 +30,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('orders')
-      .select('id, user_id, status, created_at, order_items(id, sku, quantity, price_at_purchase)');
+      .select('id, user_id, user_email, status, created_at, order_items(id, sku, quantity, price_at_purchase)');
 
     if (statusParam) {
       if (!VALID_ORDER_STATUSES.includes(statusParam as (typeof VALID_ORDER_STATUSES)[number])) {
@@ -54,6 +56,7 @@ export async function GET(request: Request) {
       return {
         id: order.id,
         user_id: order.user_id,
+        user_email: order.user_email ?? null,
         status,
         created_at: order.created_at,
         order_items: (order.order_items ?? []).map((item: OrderItemSummary) => ({
@@ -67,6 +70,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ orders: normalizedOrders });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load orders';
+    logger.error('Failed to load admin orders', { error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

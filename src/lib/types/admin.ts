@@ -9,6 +9,7 @@ export type AdminOrderItem = {
 export type AdminOrderSummary = {
   id: string;
   user_id: string;
+  user_email?: string | null;
   status: OrderStatus;
   created_at: string;
   updated_at?: string;

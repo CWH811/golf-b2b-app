@@ -44,6 +44,7 @@ export function AdminOrdersTable({ orders, loading, onRefresh, searchQuery }: Or
   const filtered = orders.filter((order) =>
     order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.user_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (order.user_email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -96,7 +97,7 @@ export function AdminOrdersTable({ orders, loading, onRefresh, searchQuery }: Or
               {filtered.map((order) => (
                 <tr key={order.id} className="hover:bg-white/5">
                   <td className="px-5 py-3 font-mono text-xs text-slate-400">{order.id.slice(0, 8)}</td>
-                  <td className="px-5 py-3 text-slate-200">{order.user_id}</td>
+                  <td className="px-5 py-3 text-slate-200">{order.user_email ?? order.user_id}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <select

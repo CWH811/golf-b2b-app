@@ -3,9 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { AdminOrdersTable } from './AdminOrdersTable';
 import { AdminCatalogTable } from './AdminCatalogTable';
+import { AdminFleetTable } from './AdminFleetTable';
+import { AdminActivityTable } from './AdminActivityTable';
 import { ProductScanner } from './ProductScanner';
 import type { AdminOrderSummary, AdminCatalogRecord } from '@/src/lib/types/admin';
+import type { AdminAuditLogEntry } from '@/app/api/admin/auditLog';
 import type { OrderStatus } from '@/src/lib/types/orders';
+import type { GolfCartFleetRow } from '@/src/lib/types/golfCart';
 
 const ORDER_FILTERS: { label: string; value: OrderStatus | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -18,7 +22,10 @@ const ORDER_FILTERS: { label: string; value: OrderStatus | 'all' }[] = [
 export function AdminDashboardClient() {
   const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
   const [catalog, setCatalog] = useState<AdminCatalogRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'orders' | 'catalog' | 'scanner'>('orders');
+  const [fleet, setFleet] = useState<GolfCartFleetRow[]>([]);
+  const [activity, setActivity] = useState<AdminAuditLogEntry[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'orders' | 'catalog' | 'fleet' | 'activity' | 'scanner'>('orders');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -31,9 +38,10 @@ export function AdminDashboardClient() {
 
     try {
       const statusQuery = statusFilter === 'all' ? '' : `?status=${statusFilter}`;
-      const [ordersResponse, catalogResponse] = await Promise.all([
+      const [ordersResponse, catalogResponse, fleetResponse] = await Promise.all([
         fetch(`/api/admin/orders${statusQuery}`),
         fetch('/api/admin/catalog'),
+        fetch('/api/admin/fleet'),
       ]);
 
       if (!ordersResponse.ok) {
@@ -42,18 +50,39 @@ export function AdminDashboardClient() {
       if (!catalogResponse.ok) {
         throw new Error('Unable to load catalog');
       }
+      if (!fleetResponse.ok) {
+        throw new Error('Unable to load golf cart fleet');
+      }
 
       const ordersData = await ordersResponse.json();
       const catalogData = await catalogResponse.json();
+      const fleetData = await fleetResponse.json();
 
       setOrders(ordersData.orders ?? []);
       setCatalog(catalogData.catalog ?? []);
+      setFleet(fleetData.fleet ?? []);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to load admin data');
     } finally {
       setLoading(false);
     }
   }, [statusFilter]);
+
+  const loadActivity = useCallback(async () => {
+    setActivityLoading(true);
+    try {
+      const response = await fetch('/api/admin/activity');
+      if (!response.ok) {
+        throw new Error('Unable to load activity log');
+      }
+      const data = await response.json();
+      setActivity(data.entries ?? []);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to load activity log');
+    } finally {
+      setActivityLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -62,6 +91,18 @@ export function AdminDashboardClient() {
 
     return () => window.clearTimeout(timeoutId);
   }, [loadData]);
+
+  useEffect(() => {
+    if (activeTab !== 'activity') {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      void loadActivity();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeTab, loadActivity]);
+
 
   const handleCatalogUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -135,6 +176,20 @@ export function AdminDashboardClient() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('fleet')}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${activeTab === 'fleet' ? 'bg-[#39FF14] text-[#101210] shadow-[0_0_20px_rgba(57,255,20,0.18)]' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+          >
+            Fleet
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('activity')}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${activeTab === 'activity' ? 'bg-[#007BFF] text-white shadow-[0_0_20px_rgba(0,123,255,0.18)]' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+          >
+            Activity
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('scanner')}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${activeTab === 'scanner' ? 'bg-[#007BFF] text-white shadow-[0_0_20px_rgba(0,123,255,0.18)]' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
           >
@@ -152,7 +207,7 @@ export function AdminDashboardClient() {
         <div className="relative w-full max-w-xs">
           <input
             type="text"
-            placeholder={`Search ${activeTab === 'orders' ? 'orders…' : 'catalog…'}`}
+            placeholder={`Search ${activeTab === 'orders' ? 'orders…' : activeTab === 'fleet' ? 'fleet…' : activeTab === 'activity' ? 'activity…' : 'catalog…'}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-xl border border-white/10 bg-[#1b1d20]/80 px-4 py-2.5 pl-9 text-sm text-white placeholder:text-slate-500 focus:border-[#39FF14]/40 focus:outline-none"
@@ -204,6 +259,19 @@ export function AdminDashboardClient() {
         />
       ) : activeTab === 'scanner' ? (
         <ProductScanner />
+      ) : activeTab === 'fleet' ? (
+        <AdminFleetTable
+          fleet={fleet}
+          loading={loading}
+          onRefresh={loadData}
+          searchQuery={searchQuery}
+        />
+      ) : activeTab === 'activity' ? (
+        <AdminActivityTable
+          entries={activity}
+          loading={activityLoading}
+          searchQuery={searchQuery}
+        />
       ) : (
         <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <AdminCatalogTable

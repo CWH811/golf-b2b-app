@@ -34,19 +34,26 @@ type ScanState =
   | { status: 'error'; message: string };
 
 // ── Queue for background-syncing photos when offline ──
+// Photos are persisted as base64 data URLs (not raw Blobs) because
+// Blob instances can't survive JSON.stringify/localStorage round-trips
+// — a plain Blob field would silently serialize to "{}" and corrupt
+// every queued photo before it could ever be retried.
 type QueuedPhoto = {
   id: string;
-  blob: Blob;
+  dataUrl: string;
   timestamp: number;
   retries: number;
 };
 
 const QUEUE_KEY = 'gcore_scan_queue';
+// localStorage (not sessionStorage) so the queue survives the app/tab
+// being closed on spotty course Wi-Fi — the whole point of queuing.
+const MAX_QUEUE_SIZE = 15;
 
 function getQueue(): QueuedPhoto[] {
   if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(sessionStorage.getItem(QUEUE_KEY) || '[]');
+    return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
   } catch {
     return [];
   }
@@ -54,10 +61,34 @@ function getQueue(): QueuedPhoto[] {
 
 function saveQueue(queue: QueuedPhoto[]) {
   try {
-    sessionStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    // Cap queue size to avoid exhausting localStorage quota with
+    // full-resolution JPEG data URLs; drop the oldest entries first.
+    const capped = queue.length > MAX_QUEUE_SIZE ? queue.slice(queue.length - MAX_QUEUE_SIZE) : queue;
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(capped));
   } catch {
-    // sessionStorage full — silently fail
+    // localStorage full or unavailable — silently fail
   }
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read blob'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(',');
+  const mimeMatch = header.match(/data:(.*);base64/);
+  const mimeType = mimeMatch?.[1] ?? 'image/jpeg';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mimeType });
 }
 
 // ── Component ──
@@ -166,10 +197,11 @@ export function ProductScanner() {
 
         // If offline, queue the photo for background sync
         if (!navigator.onLine) {
+          const dataUrl = await blobToDataUrl(blob);
           const queue: QueuedPhoto[] = getQueue();
           queue.push({
             id: crypto.randomUUID?.() ?? `${Date.now()}_${Math.random().toString(36).slice(2)}`,
-            blob,
+            dataUrl,
             timestamp: Date.now(),
             retries: 0,
           });
@@ -222,10 +254,11 @@ export function ProductScanner() {
             setScanState({ status: 'timeout' });
           } else if (err instanceof TypeError && err.message === 'Failed to fetch') {
             // Network dropped mid-request — queue for retry
+            const dataUrl = await blobToDataUrl(blob);
             const queue: QueuedPhoto[] = getQueue();
             queue.push({
               id: crypto.randomUUID?.() ?? `${Date.now()}_${Math.random().toString(36).slice(2)}`,
-              blob,
+              dataUrl,
               timestamp: Date.now(),
               retries: 0,
             });
@@ -257,7 +290,7 @@ export function ProductScanner() {
 
     for (const item of queue) {
       const formData = new FormData();
-      formData.append('image', item.blob, 'scan.jpg');
+      formData.append('image', dataUrlToBlob(item.dataUrl), 'scan.jpg');
 
       try {
         const controller = new AbortController();
@@ -291,6 +324,16 @@ export function ProductScanner() {
     saveQueue(remaining);
     setQueuedCount(remaining.length);
   }, []);
+
+  // ── Auto-retry queued scans the moment connectivity returns, so
+  // field staff don't have to remember to tap "Retry Queue" ──
+  useEffect(() => {
+    const handleReconnect = () => {
+      void retryQueuedItems();
+    };
+    window.addEventListener('online', handleReconnect);
+    return () => window.removeEventListener('online', handleReconnect);
+  }, [retryQueuedItems]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {

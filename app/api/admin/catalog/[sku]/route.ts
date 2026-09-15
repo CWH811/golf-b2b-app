@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminUser, isOwnerUser } from '../../auth';
+import { logAdminAction } from '../../auditLog';
+import { logger } from '@/lib/logger';
 import type { CatalogStatus } from '@/src/lib/types/admin';
 
 const VALID_CATALOG_STATUSES: CatalogStatus[] = ['active', 'archived'];
@@ -51,9 +53,12 @@ export async function PATCH(
       throw error;
     }
 
+    await logAdminAction(supabase, user, 'update_product', 'product', sku, updates);
+
     return NextResponse.json({ success: true, product: data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update product';
+    logger.error('Failed to update product', { error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -82,9 +87,12 @@ export async function DELETE(
       throw error;
     }
 
+    await logAdminAction(supabase, user, 'archive_product', 'product', sku, { status: 'archived' });
+
     return NextResponse.json({ success: true, product: data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to archive product';
+    logger.error('Failed to archive product', { error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

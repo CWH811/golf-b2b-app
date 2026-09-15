@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { syncContactToGoHighLevel } from '@/lib/gohighlevel';
+import { logger } from '@/lib/logger';
 
 type OrderItemPayload = {
   sku: string;
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert([{ user_id: user.id, status: 'pending' }])
+      .insert([{ user_id: user.id, user_email: user.email ?? null, status: 'pending' }])
       .select()
       .single();
 
@@ -66,6 +67,23 @@ export async function POST(request: Request) {
 
     if (itemsError) throw itemsError;
 
+    // Decrement stock for each purchased item. This runs via a
+    // SECURITY DEFINER RPC (not a direct table update) because
+    // products writes are admin-only under RLS; failures here are
+    // logged but never block order submission — the order itself
+    // already succeeded and stock can be reconciled by an admin.
+    await Promise.all(
+      items.map((item) =>
+        supabase
+          .rpc('decrement_product_stock', { p_sku: item.sku, p_qty: item.quantity })
+          .then(({ error }) => {
+            if (error) {
+              logger.error('Stock decrement failed', { sku: item.sku, error: error.message });
+            }
+          })
+      )
+    );
+
     if (user.email) {
       // Non-blocking: CRM sync failures must never break order submission.
       syncContactToGoHighLevel({ email: user.email, tags: ['GCore Order'], source: 'GCore Order' }).catch(() => {});
@@ -74,8 +92,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, orderId: order.id });
 
   } catch (error: unknown) {
-    console.error("Order submission failed:", error);
     const message = error instanceof Error ? error.message : "Failed to submit order";
+    logger.error('Order submission failed', { error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

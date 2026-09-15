@@ -16,6 +16,7 @@ vi.mock('next/headers', () => ({
 // Mock Supabase SSR
 const mockGetUser = vi.fn();
 const mockFrom = vi.fn();
+const mockRpc = vi.fn().mockResolvedValue({ error: null });
 
 vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(() => ({
@@ -23,6 +24,7 @@ vi.mock('@supabase/ssr', () => ({
       getUser: mockGetUser,
     },
     from: mockFrom,
+    rpc: mockRpc,
   })),
 }));
 
@@ -103,7 +105,7 @@ describe('POST /api/order', () => {
 
   it('creates an order with items for an authenticated user', async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { id: 'user-123' } },
+      data: { user: { id: 'user-123', email: 'customer@example.com' } },
       error: null,
     });
 
@@ -139,11 +141,12 @@ describe('POST /api/order', () => {
     expect(body.success).toBe(true);
     expect(body.orderId).toBe('order-abc');
 
-    // Verify the order was created with the correct user_id and status
+    // Verify the order was created with the correct user_id, email, and status
     // The route inserts an array of records
     expect(mockOrdersInsert).toHaveBeenCalledWith([
       {
         user_id: 'user-123',
+        user_email: 'customer@example.com',
         status: 'pending',
       },
     ]);
@@ -157,5 +160,45 @@ describe('POST /api/order', () => {
         price_at_purchase: 29.99,
       },
     ]);
+  });
+
+  it('decrements stock via RPC for each purchased item and still succeeds if the RPC errors', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'user-123' } },
+      error: null,
+    });
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { id: 'order-abc' },
+      error: null,
+    });
+    const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockOrdersInsert = vi.fn().mockReturnValue({ select: mockSelect });
+    const mockOrderItemsInsert = vi.fn().mockResolvedValue({ error: null });
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'orders') {
+        return { insert: mockOrdersInsert };
+      }
+      if (table === 'order_items') {
+        return { insert: mockOrderItemsInsert };
+      }
+      return {};
+    });
+
+    // Simulate the RPC failing — order submission must still succeed.
+    mockRpc.mockResolvedValue({ error: { message: 'stock RPC failed' } });
+
+    const request = createOrderRequest([
+      { sku: 'GB-12', quantity: 3, price: 29.99 },
+      { sku: 'GB-13', quantity: 1, price: 9.5 },
+    ]);
+    const response = await POST(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(mockRpc).toHaveBeenCalledWith('decrement_product_stock', { p_sku: 'GB-12', p_qty: 3 });
+    expect(mockRpc).toHaveBeenCalledWith('decrement_product_stock', { p_sku: 'GB-13', p_qty: 1 });
   });
 });
